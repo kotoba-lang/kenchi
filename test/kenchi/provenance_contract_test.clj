@@ -1,0 +1,56 @@
+(ns kenchi.provenance-contract-test
+  "The contract that lets fused, partly-licensed source data become a public
+  number: kenchi NEVER publishes a POINT value the ProvenanceGovernor would
+  reject (< N independent sources, stale, or after-outlier too thin), and
+  NEVER passes restricted source data through as raw."
+  (:require [clojure.test :refer [deftest is testing]]
+            [langgraph.graph :as g]
+            [kenchi.parcel :as parcel]
+            [kenchi.sources :as sources]
+            [kenchi.governor :as gov]))
+
+(defn- run-tick [actor tid scenario]
+  (let [obs (sources/observe sources/demo-parcel scenario)
+        r (g/run* actor {:observations obs :parcel sources/demo-parcel} {:thread-id tid})]
+    (if (= :interrupted (:status r))
+      (g/run* actor nil {:thread-id tid})  ; compliance acknowledges the decline
+      r)))
+
+(deftest rich-evidence-publishes-a-point
+  (let [actor (parcel/build)
+        r (run-tick actor "t-rich" :rich)
+        rec (get-in r [:state :record])]
+    (is (= :valuation (:kind rec)))
+    (is (pos? (:value-usd-micros rec)))
+    (is (< (:ci-lo-usd-micros rec) (:value-usd-micros rec) (:ci-hi-usd-micros rec)))
+    (is (= :open (:license rec)))
+    (is (>= (:n-sources rec) gov/min-independent-sources))))
+
+(deftest thin-evidence-falls-back-to-mrv
+  (testing "2 sources < N → no point; a wide band, never false precision"
+    (let [actor (parcel/build)
+          r (run-tick actor "t-thin" :thin)
+          rec (get-in r [:state :record])]
+      (is (contains? #{:mrv-band :insufficient-evidence} (:kind rec)))
+      (is (nil? (:value-usd-micros rec)))            ; NO point published
+      (is (some #(= :mrv (:t %)) (get-in r [:state :audit]))))))
+
+(deftest restricted-source-publishes-derived-only
+  (testing "a derived-only portal in the mix forces the published license down"
+    (let [actor (parcel/build)
+          r (run-tick actor "t-restr" :restricted)
+          rec (get-in r [:state :record])]
+      (is (= :valuation (:kind rec)))
+      (is (= :derived-only (:license rec))))))
+
+(deftest outlier-is-quarantined
+  (testing "a 250M scraper outlier is dropped before the estimate"
+    (let [obs (sources/observe sources/demo-parcel :restricted)
+          [_kept dropped] (gov/flag-outliers obs)]
+      (is (some #(= :scraper-x (:source %)) dropped)))))
+
+(deftest n-source-gate-blocks-thin
+  (testing "governor refuses a point under N independent sources"
+    (let [v (gov/check (sources/observe sources/demo-parcel :thin))]
+      (is (false? (:ok? v)))
+      (is (some #(= :insufficient-independent-sources (:rule %)) (:violations v))))))

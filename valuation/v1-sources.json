@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "note": "Open source registry + cold-start reliability/kind priors for kenchi fusion. SSoT for which feeds an IngestActor may pull, their license class, and their starting weight. Reliability is recalibrated against realized sales by ModelFlywheelActor; this file is only the prior.",
+  "license_classes": {
+    "open": "raw value may be republished (public assessment / registry / OECD / OSM)",
+    "derived-only": "may contribute to a fused number, but raw value must not pass through (most portal AVMs)",
+    "restricted": "Murakumo-only inference; value never leaves the mesh; publish derived aggregate only"
+  },
+  "kind_prior": {
+    "sale": 1.0, "assessment": 0.8, "avm": 0.65, "list": 0.5, "index": 0.3
+  },
+  "sources": [
+    { "id": "jp-mlit-chika",  "authority": "MLIT 地価公示/都道府県地価調査", "region": "jp", "kind": "assessment", "license": "open",         "reliability": 0.85 },
+    { "id": "jp-registry",    "authority": "国交省 不動産取引価格情報",       "region": "jp", "kind": "sale",       "license": "open",         "reliability": 0.95 },
+    { "id": "reinfolib",      "authority": "Real Estate Information Library", "region": "jp", "kind": "avm",        "license": "open",         "reliability": 0.70 },
+    { "id": "portal-suumo",   "authority": "SUUMO/AtHome (portal AVM)",       "region": "jp", "kind": "avm",        "license": "derived-only", "reliability": 0.75 },
+    { "id": "us-assessor",    "authority": "US county assessor rolls",        "region": "us", "kind": "assessment", "license": "open",         "reliability": 0.80 },
+    { "id": "us-zillow",      "authority": "Zillow Zestimate",                "region": "us", "kind": "avm",        "license": "restricted",   "reliability": 0.78 },
+    { "id": "uk-landreg",     "authority": "HM Land Registry Price Paid",     "region": "uk", "kind": "sale",       "license": "open",         "reliability": 0.95 },
+    { "id": "eu-inspire",     "authority": "EU INSPIRE cadastre",             "region": "eu", "kind": "assessment", "license": "open",         "reliability": 0.75 },
+    { "id": "oecd-hpi",       "authority": "OECD House Price Index",          "region": "world", "kind": "index",   "license": "open",         "reliability": 0.40 },
+    { "id": "bis-property",   "authority": "BIS residential property prices", "region": "world", "kind": "index",   "license": "open",         "reliability": 0.40 },
+    { "id": "osm-footprint",  "authority": "OpenStreetMap building footprints","region": "world","kind": "avm",      "license": "open",         "reliability": 0.45 }
+  ],
+  "publish_gate": {
+    "min_independent_sources": 3,
+    "outlier_mad_k": 3.5,
+    "max_publish_age_days": 1825
+  }
+}

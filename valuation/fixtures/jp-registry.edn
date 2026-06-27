@@ -1,0 +1,7 @@
+;; Recorded shape of 国交省 不動産情報ライブラリ XIT001 (不動産取引価格情報).
+;; Decoded EDN with keyword keys — exactly what a real :json-read yields from
+;; the live JSON. Used by kenchi.ingest fixture-caps so the parse path runs offline.
+{:status "OK"
+ :data [{:Type "宅地(土地と建物)" :Period "2024年第1四半期" :TradePrice "99000000" :Municipality "渋谷区"}
+        {:Type "宅地(土地と建物)" :Period "2023年第3四半期" :TradePrice "101000000" :Municipality "渋谷区"}
+        {:Type "宅地(土地と建物)" :Period "2024年第2四半期" :TradePrice "97500000" :Municipality "渋谷区"}]}

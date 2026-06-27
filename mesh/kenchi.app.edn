@@ -1,0 +1,33 @@
+;; kenchi.app.edn — KOTOBA Mesh application manifest for the kenchi valuation
+;; actor's ON-MESH surface (ADR §7 / §14). murakumo.app.edn references this as a
+;; fleet app; `kotoba app deploy mesh/kenchi.app.edn --publish --url http://node:8080`
+;; compiles each :src to a CID and announces the triggers/routes to a node.
+;;
+;; SPLIT OF DUTIES (see ../docs/DESIGN.md §6):
+;;   - The heavy, networked INGEST + FUSION runs OFF-MESH on the JVM operator side
+;;     (kenchi.http + kenchi.ingest + kenchi.parcel StateGraph). It produces a
+;;     governor-CLEARED, license-stamped valuation record.
+;;   - Those cleared records are written to the node's Datom log via kqe-assert!.
+;;   - THESE on-mesh components only SERVE and REFRESH already-cleared facts:
+;;       valuation-query   on-http  GET /kenchi/valuation?parcel=…  → latest record
+;;       valuation-refresh on-tick  re-announce/age-check published valuations
+;;   This keeps ToS-restricted inputs Murakumo-only (they never leave the mesh as
+;;   raw) while the public, derived records are served content-addressed.
+{:kotoba.app/name    "kenchi-valuation"
+ :kotoba.app/version "0.1.0"
+ :kotoba.app/components
+ [{:name     "valuation-query"
+   :src      "valuation_query.clj"          ; Clojure default → compiled to CID
+   :scale    2
+   :triggers [{:type :http :route "/kenchi/valuation"}]
+   :requires #{:cap/kqe}}
+
+  {:name     "valuation-refresh"
+   :src      "valuation_refresh.clj"
+   :scale    1
+   :triggers [{:type :tick :every "6h"}]    ; periodic freshness/age sweep
+   :requires #{:cap/kqe}}]
+
+ ;; Place on the JP edge tribe (same class murakumo's other mesh apps use).
+ :kotoba.app/placement {:spread  :zone
+                        :require {:tier "edge"}}}

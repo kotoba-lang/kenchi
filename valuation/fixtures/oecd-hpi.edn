@@ -1,0 +1,4 @@
+;; OECD house-price index pre-projected to a per-parcel JPY anchor for the
+;; demo parcel (a region index is only a weak per-parcel prior — kind :index,
+;; confidence 0.40 in the adapter). Decoded EDN with keyword keys.
+{:index-value 98000000 :currency :jpy :age-days 60}

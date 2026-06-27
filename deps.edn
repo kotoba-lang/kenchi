@@ -1,0 +1,26 @@
+{:paths ["src"]
+ ;; langgraph-clj brings langchain-clj transitively (both zero-/single-dep,
+ ;; all .cljc → portable to JVM / SCI / ClojureScript / GraalVM). Same runtime
+ ;; the robotaxi-actor sits on.
+ :deps {io.github.com-junkawasaki/langgraph-clj
+        {:local/root "../langgraph-clj"}}
+ :aliases
+ {;; offline workspace dev — pin transitive langchain-clj to local checkout
+  :dev {:override-deps
+        {io.github.com-junkawasaki/langchain-clj {:local/root "../langchain-clj"}}}
+  ;; clojure -M:dev:run  → value one parcel through three scenarios (mock feeds)
+  :run {:main-opts ["-m" "kenchi.sim"]}
+  ;; clojure -M:dev:live → full live-wiring pipeline offline: real adapters
+  ;; (fixtures) → fuse/govern → PDS putRecord (dry-run) → flywheel recalibration.
+  ;; `valuation` on the classpath so ingest fixtures resolve via io/resource.
+  :live {:extra-paths ["valuation"]
+         :main-opts ["-m" "kenchi.live"]}
+  ;; clojure -M:live-real ["POSTCODE"] → REAL network call to HM Land Registry
+  ;; via kenchi.http (java.net.http + data.json) through the live ingest adapter.
+  :live-real {:extra-deps {org.clojure/data.json {:mvn/version "2.5.0"}}
+              :main-opts ["-m" "kenchi.live-real"]}
+  :test {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner"]
+         :exec-fn cognitect.test-runner.api/test}}}

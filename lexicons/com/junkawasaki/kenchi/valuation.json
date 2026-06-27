@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "com.junkawasaki.kenchi.valuation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A provenance-stamped, uncertainty-quantified valuation of one parcel, fused by kenchi from multiple sources and cleared by the ProvenanceGovernor. rkey = sanitized parcel id (re-valuation updates in place).",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["parcel", "valueUsd", "ciLoUsd", "ciHiUsd", "nSources", "license", "provenance", "asof", "createdAt"],
+        "properties": {
+          "parcel":     { "type": "string", "maxLength": 256, "description": "Canonical parcel id (place, not person — no PII)." },
+          "h3":         { "type": "string", "maxLength": 32, "description": "H3 cell index of the parcel." },
+          "valueUsd":   { "type": "string", "description": "Fused point estimate, USD decimal string." },
+          "ciLoUsd":    { "type": "string", "description": "Confidence-interval low, USD decimal string." },
+          "ciHiUsd":    { "type": "string", "description": "Confidence-interval high, USD decimal string." },
+          "nSources":   { "type": "integer", "minimum": 0, "description": "Independent sources behind the point." },
+          "maxAgeDays": { "type": "integer", "minimum": 0, "description": "Staleness of the oldest contributing observation." },
+          "license":    { "type": "string", "knownValues": ["open", "derived-only"], "description": "Republication class of THIS record (most restrictive contributing source)." },
+          "provenance": {
+            "type": "array",
+            "description": "Receipts: the sources, kinds, and licenses that produced the number.",
+            "items": { "type": "ref", "ref": "#receipt" }
+          },
+          "asof":      { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "required": ["source", "kind", "license"],
+      "properties": {
+        "source":  { "type": "string", "maxLength": 128 },
+        "kind":    { "type": "string", "knownValues": ["sale", "assessment", "avm", "list", "index"] },
+        "license": { "type": "string", "knownValues": ["open", "derived-only", "restricted"] }
+      }
+    }
+  }
+}

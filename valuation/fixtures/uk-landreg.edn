@@ -1,0 +1,7 @@
+;; Recorded shape of HM Land Registry Price Paid SPARQL JSON results.
+;; (Different parcel/region than the JP demo — shows the same adapter contract
+;; normalizing a GBP sale.) Decoded EDN with keyword keys.
+{:results
+ {:bindings
+  [{:amount {:value "752000"} :date {:value "2024-03-01"}}
+   {:amount {:value "748000"} :date {:value "2023-11-12"}}]}}
