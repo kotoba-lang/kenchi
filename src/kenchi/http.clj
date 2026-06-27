@@ -14,6 +14,8 @@
   (:import (java.net URI URLEncoder)
            (java.net.http HttpClient HttpRequest
                           HttpRequest$BodyPublishers HttpResponse$BodyHandlers)
+           (java.io ByteArrayInputStream)
+           (java.util.zip GZIPInputStream)
            (java.time Duration)))
 
 (def ^:private client
@@ -40,6 +42,20 @@
                    (.build))
           resp (.send client req (HttpResponse$BodyHandlers/ofString))]
       {:status (.statusCode resp) :body (.body resp)})))
+
+(defn range-text
+  "GET a byte range and gunzip it to a UTF-8 string — for fetching a single
+  gzip'd WARC record from data.commoncrawl.org (each record is its own gzip
+  member, so the range IS a complete gzip stream). Returns the decoded record
+  text (WARC + HTTP headers + payload), or nil on a non-2xx."
+  [url off len]
+  (let [b   (-> (HttpRequest/newBuilder (URI/create url))
+                (.header "range" (str "bytes=" off "-" (+ off len -1)))
+                (.timeout (Duration/ofSeconds 40)) (.GET) (.build))
+        rs  (.send client b (HttpResponse$BodyHandlers/ofByteArray))]
+    (when (#{200 206} (.statusCode rs))
+      (with-open [g (GZIPInputStream. (ByteArrayInputStream. (.body rs)))]
+        (slurp g)))))
 
 (defn json-read [s] (json/read-str s :key-fn keyword))
 

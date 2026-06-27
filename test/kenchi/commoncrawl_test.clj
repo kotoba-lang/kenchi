@@ -1,0 +1,52 @@
+(ns kenchi.commoncrawl-test
+  "Common Crawl ingest contracts — all offline via injected I/O:
+  index parsing, sale/rental/POA price extraction, and that captured listings
+  become :list / :derived-only observations stamped by portal authority."
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.edn :as edn]
+            [kenchi.commoncrawl :as cc]
+            [kenchi.fusion :as fusion]))
+
+;; index-query is fed EDN lines + edn/read-string as :json-read, so the test
+;; needs no JSON dependency (production injects data.json).
+(def ^:private index-jsonl
+  (str "{:url \"https://www.rightmove.co.uk/properties/100644413\" :status \"200\""
+       " :timestamp \"20241201120000\" :filename \"f1.warc.gz\" :offset \"10\" :length \"20\"}\n"
+       "{:url \"https://www.rightmove.co.uk/properties/10007618\" :status \"200\""
+       " :timestamp \"20241202120000\" :filename \"f2.warc.gz\" :offset \"30\" :length \"40\"}\n"
+       "{:url \"https://www.rightmove.co.uk/properties/999 :status \\\"404\\\"\" :status \"404\"}"))
+
+(defn- caps [body] {:http-fn (fn [_] {:status 200 :body body}) :json-read edn/read-string})
+
+(deftest index-query-parses-200-captures
+  (let [q (cc/index-query (caps index-jsonl) "CC-MAIN-2024-51" "rightmove.co.uk/*" 10)]
+    (is (= 2 (count q)))                                  ; the 404 line is dropped
+    (is (= "f1.warc.gz" (:filename (first q))))))
+
+(deftest extract-price-keeps-sales-drops-rentals-and-poa
+  (testing "sale asking price"
+    (is (= {:value 250000 :currency :gbp}
+           (cc/extract-price "...\"primaryPrice\":\"£250,000\"..."))))
+  (testing "rental is NOT a valuation signal"
+    (is (nil? (cc/extract-price "...\"primaryPrice\":\"£1,195 pcm\"...")))
+    (is (nil? (cc/extract-price "...\"primaryPrice\":\"£511 pw\"..."))))
+  (testing "price-on-application has no number"
+    (is (nil? (cc/extract-price "...\"primaryPrice\":\"POA\"..."))))
+  (testing "JSON-LD Offer fallback"
+    (is (= {:value 480000 :currency :gbp}
+           (cc/extract-price "{\"@type\":\"Offer\",\"price\":\"480000\"}")))))
+
+(deftest observe-stamps-derived-only-list-by-authority
+  (let [html {"https://www.rightmove.co.uk/properties/100644413" "\"primaryPrice\":\"£250,000\""
+              "https://www.rightmove.co.uk/properties/10007618"  "\"primaryPrice\":\"£1,195 pcm\""}
+        obs  (cc/observe (caps index-jsonl) "rightmove.co.uk/*"
+                         {:limit 10 :now-year 2026
+                          :fetch-record (fn [c] (get html (:url c)))})]
+    (is (= 1 (count obs)))                                ; rental excluded
+    (let [o (first obs)]
+      (is (= :list (:kind o)))
+      (is (= :derived-only (:license o)))                 ; ToS — never raw
+      (is (= :rightmove.co.uk (:authority o)))            ; portal = the authority
+      (is (= :common-crawl (:source o)))
+      (is (= 250000 (:value o)))
+      (is (contains? fusion/price-kinds (:kind o))))))    ; :list anchors (weakly)

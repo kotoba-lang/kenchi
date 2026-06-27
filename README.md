@@ -75,7 +75,8 @@ with many comps) is refused.
 |---|---|
 | `src/kenchi/sources.cljc` | **IngestActor (mock feeds)** — per-source stamped Observations for the offline demo |
 | `src/kenchi/ingest.cljc` | **IngestActor (live wiring)** — real source adapters (MLIT / HM Land Registry / BIS / OECD), authority-stamped, injected HTTP I/O, fixture caps |
-| `src/kenchi/http.clj` | real `java.net.http` + `data.json` host-caps — the production swap for fixture-caps |
+| `src/kenchi/commoncrawl.clj` | **IngestActor — Common Crawl** — web-scale portal *asking* prices from the open crawl (CC index → WARC range-fetch → price extract), `:list` / `:derived-only`, rentals excluded |
+| `src/kenchi/http.clj` | real `java.net.http` + `data.json` host-caps (incl. gzip WARC range-fetch) — the production swap for fixture-caps |
 | `src/kenchi/fusion.cljc` | **ValuationEngine** — robust multi-source ensemble + CI; per-source reliability (flywheel-tuned) |
 | `src/kenchi/governor.cljc` | **ProvenanceGovernor / LicenseGovernor** — N-source gate, ToS clear, outlier reject, MRV |
 | `src/kenchi/parcel.cljc` | **ParcelActor** — the langgraph-clj StateGraph (1 run = 1 valuation) |
