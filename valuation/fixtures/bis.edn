@@ -1,0 +1,10 @@
+;; Recorded shape of BIS WS_SPP (Selected Property Prices) SDMX-JSON 2.0.
+;; Decoded EDN with keyword keys — what a real :json-read yields. The kenchi
+;; ingest :bis adapter pulls the latest observation via sdmx-latest:
+;;   data.dataSets[0].series → first series → highest obs key → value[0].
+{:data
+ {:dataSets
+  [{:series
+    {:s0
+     {:observations {:0 ["112.4" 0 0 nil]
+                     :1 ["110.9" 0 0 nil]}}}}]}}

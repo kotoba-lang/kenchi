@@ -5,6 +5,7 @@
             [kenchi.ingest :as ingest]
             [kenchi.publish :as publish]
             [kenchi.flywheel :as flywheel]
+            [kenchi.governor :as gov]
             [kenchi.fusion :as fusion]))
 
 ;; ─────────────────────────────── 1. ingest ───────────────────────────────
@@ -29,6 +30,55 @@
   (testing "a non-200 / missing body yields [], never an exception"
     (let [caps {:http-fn (fn [_] {:status 503 :body nil}) :json-read identity}]
       (is (= [] (ingest/fetch-source caps :jp-registry {:year 2024 :area "13"}))))))
+
+(def bis-fixture
+  {:data {:dataSets [{:series {:s0 {:observations {:0 ["112.4" 0 0 nil]
+                                                   :1 ["110.9" 0 0 nil]}}}}]}})
+
+(deftest ingest-parses-bis-sdmx-index
+  (testing "BIS SDMX-JSON → one independent :index observation, authority :bis"
+    (let [caps (ingest/fixture-caps {:bis bis-fixture})
+          [o]  (ingest/fetch-source caps :bis {:bis-key "Q.GB.N.628"})]
+      (is (= :index (:kind o)))
+      (is (= :bis (:authority o)))
+      (is (= 112.4 (:value o))))))                       ; latest obs (key 0)
+
+;; ───────────────────── the gate on multi-authority evidence ─────────────────
+
+(deftest gate-passes-with-comps-and-two-authorities
+  (testing "≥3 recorded comps (1 authority) + an independent index (2nd authority) → publishable"
+    (let [sales (for [p [99000000 101000000 97500000 98000000]]
+                  {:source :uk-landreg :authority :hm-land-registry :kind :sale
+                   :value p :currency :jpy :age-days 200 :license :open :confidence 0.95})
+          bis   {:source :bis :authority :bis :kind :index :value 112.4
+                 :currency :index :age-days 60 :license :open :confidence 0.45}
+          v     (gov/check (conj (vec sales) bis))]
+      (is (true? (:ok? v)))
+      (is (= 4 (:n-comps v)))
+      (is (= 2 (:n-authorities v)))
+      (is (pos? (:point-usd-micros (:estimate v)))))))    ; index did NOT pollute the £ median
+
+(deftest gate-blocks-single-authority
+  (testing "many comps but only ONE authority → refused (provider diversity)"
+    (let [sales (for [p [99000000 101000000 97500000 98000000]]
+                  {:source :uk-landreg :authority :hm-land-registry :kind :sale
+                   :value p :currency :jpy :age-days 200 :license :open :confidence 0.95})
+          v     (gov/check (vec sales))]
+      (is (false? (:ok? v)))
+      (is (some #(= :insufficient-authorities (:rule %)) (:violations v))))))
+
+(deftest region-report-aggregates-without-naming-a-parcel
+  (let [obs [{:kind :sale :value 200000 :currency :gbp :source :uk-landreg}
+             {:kind :sale :value 300000 :currency :gbp :source :uk-landreg}
+             {:kind :sale :value 250000 :currency :gbp :source :uk-landreg}]
+        agg (fusion/region-aggregate obs)
+        rec (publish/->region-record (assoc agg :region "UK/PL6" :h3 "8a1958" :license :open)
+                                     "2026-06-27T00:00:00Z")]
+    (is (= 3 (:n-comps agg)))
+    (is (= "com.junkawasaki.kenchi.regionReport" (get rec "$type")))
+    (is (= "UK/PL6" (get rec "region")))
+    (is (nil? (get rec "parcel")))                        ; AGGREGATE-ONLY: no parcel
+    (is (some? (get rec "medianUsd")))))
 
 ;; ─────────────────────────────── 2. publish ──────────────────────────────
 

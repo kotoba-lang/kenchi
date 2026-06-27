@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "com.junkawasaki.kenchi.regionReport",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An H3/region distribution of fused valuations (median + quartiles). AGGREGATE-ONLY: names no parcel, so it is publishable even where per-parcel valuation is barred by law or ToS. rkey = region|h3.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["region", "medianUsd", "nComps", "license", "asof", "createdAt"],
+        "properties": {
+          "region":    { "type": "string", "maxLength": 128, "description": "Region label (country / admin area / postcode district)." },
+          "h3":        { "type": "string", "maxLength": 32, "description": "H3 cell index of the region." },
+          "medianUsd": { "type": "string", "description": "Median valuation across the region, USD decimal string." },
+          "p25Usd":    { "type": "string", "description": "25th-percentile valuation, USD decimal string." },
+          "p75Usd":    { "type": "string", "description": "75th-percentile valuation, USD decimal string." },
+          "nComps":    { "type": "integer", "minimum": 0, "description": "Number of comps in the aggregate." },
+          "license":   { "type": "string", "knownValues": ["open", "derived-only"] },
+          "asof":      { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

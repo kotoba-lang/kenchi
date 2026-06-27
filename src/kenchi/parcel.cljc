@@ -37,10 +37,10 @@
 
 (defn build
   "Compiles a ParcelActor graph.
-  opts: {:checkpointer cp :n min-independent-sources}."
-  [& [{:keys [checkpointer n]
+  opts: {:checkpointer cp :gate {:min-comps n :min-authorities n}}."
+  [& [{:keys [checkpointer gate]
        :or   {checkpointer (cp/mem-checkpointer)
-              n            gov/min-independent-sources}}]]
+              gate         {}}}]]
   (-> (g/state-graph
        {:channels
         {:observations       {:default nil}   ; injected by SourceOrchestrator
@@ -65,11 +65,11 @@
       ;; 4. Govern — INDEPENDENT censor: outliers, N-gate, license, staleness.
       (g/add-node :govern
         (fn [{:keys [observations]}]
-          (let [v (gov/check observations n)]
+          (let [v (gov/check observations gate)]
             {:provenance-verdict v
              :audit [{:t :govern
                       :ok? (:ok? v) :license (:license v)
-                      :n-independent (:n-independent v)
+                      :n-comps (:n-comps v) :n-authorities (:n-authorities v)
                       :violations (:violations v)
                       :outliers (mapv :source (:outliers v))}]})))
 

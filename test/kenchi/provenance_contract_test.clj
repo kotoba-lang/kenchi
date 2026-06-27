@@ -50,7 +50,7 @@
       (is (some #(= :scraper-x (:source %)) dropped)))))
 
 (deftest n-source-gate-blocks-thin
-  (testing "governor refuses a point under N independent sources"
+  (testing "governor refuses a point under enough recorded comps"
     (let [v (gov/check (sources/observe sources/demo-parcel :thin))]
       (is (false? (:ok? v)))
-      (is (some #(= :insufficient-independent-sources (:rule %)) (:violations v))))))
+      (is (some #(= :insufficient-comps (:rule %)) (:violations v))))))

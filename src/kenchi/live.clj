@@ -30,20 +30,21 @@
   ;; ── 1. INGEST: call real adapters (offline fixtures) and normalize ──────────
   (let [fixtures {:jp-registry (load-fixture :jp-registry)
                   :uk-landreg  (load-fixture :uk-landreg)
-                  :oecd-hpi    (load-fixture :oecd-hpi)}
+                  :bis         (load-fixture :bis)}
         caps     (ingest/fixture-caps fixtures)
-        ;; SourceOrchestrator fan-out for the JP demo parcel (registry + index).
+        ;; SourceOrchestrator fan-out: registry sales (authority MLIT) + BIS
+        ;; national index (authority BIS) = two independent authorities.
         obs      (ingest/fetch-observations
                   caps
                   [[:jp-registry {:year 2024 :area "13" :city "13113" :now-year 2026}]
-                   [:oecd-hpi    {:ref-area "JPN"}]])]
+                   [:bis         {:bis-key "Q.JP.N.628"}]])]
     (line "── 1. INGEST (real adapters, offline fixtures) ──")
     (doseq [o obs]
       (line "   " (sources/provenance-line o)))
 
     ;; ── 2. FUSE + GOVERN via the ParcelActor StateGraph ───────────────────────
     (line "\n── 2. ParcelActor fuse → govern ──")
-    (let [actor (parcel/build {:n 2})            ; demo parcel has 2 independents
+    (let [actor (parcel/build)                   ; default gate: ≥3 comps, ≥2 authorities
           res   (g/run* actor {:observations obs :parcel sources/demo-parcel}
                         {:thread-id "live/jp"})
           res   (if (= :interrupted (:status res))

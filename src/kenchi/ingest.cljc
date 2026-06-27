@@ -28,15 +28,31 @@
 (defn- yrs-ago->days [years now-year]
   (* 365 (max 0 (- now-year (long years)))))
 
+(defn sdmx-latest
+  "Pull the latest observation value from an SDMX-JSON 2.0 message (the shape
+  BIS / OECD / Eurostat REST return): data.dataSets[0].series → first series →
+  observation at key 0 (BIS/OECD order the most-recent observation first, and
+  with lastNObservations=1 it is the only one) → first element. Returns a
+  double, or nil if the query matched no data."
+  [body]
+  (let [series (get-in body [:data :dataSets 0 :series])]
+    (when (map? series)
+      (let [obs (-> series first val :observations)]
+        (when (map? obs)
+          (let [latest-k (->> (keys obs) (map name) (map parse-long) (apply min))
+                v        (first (get obs (keyword (str latest-k))))]
+            (some-> v str parse-double)))))))
+
 (def adapters
   "Live source registry. :request builds the HTTP call; :parse maps the decoded
-  body → partial observations. Endpoints are the real public ones; keys/levels
-  come from env via host-caps in production."
+  body → partial observations; :authority is the independent provider (counted
+  for independence, not :source). Endpoints are the real public ones; keys/
+  levels come from env via host-caps in production."
   {;; 国交省 不動産情報ライブラリ — 不動産取引価格情報 (recorded transactions).
    ;; Real: GET https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001
    ;;       ?year=YYYY&area=<pref-code>&city=<code>  (header Ocp-Apim-Subscription-Key)
    :jp-registry
-   {:license :open :region :jp
+   {:license :open :region :jp :authority :mlit
     :request (fn [{:keys [year area city api-key]}]
                {:url    "https://www.reinfolib.mlit.go.jp/ex-api/external/XIT001"
                 :method :get
@@ -57,7 +73,7 @@
    ;; HM Land Registry — Price Paid (open SPARQL, no key).
    ;; Real: GET https://landregistry.data.gov.uk/landregistry/query?query=<sparql>
    :uk-landreg
-   {:license :open :region :uk
+   {:license :open :region :uk :authority :hm-land-registry
     :request (fn [{:keys [sparql]}]
                {:url    "https://landregistry.data.gov.uk/landregistry/query"
                 :method :get
@@ -73,29 +89,48 @@
                  {:value amt :currency :gbp :kind :sale :confidence 0.95
                   :age-days (yrs-ago->days (or yr now-year) now-year)}))}
 
-   ;; OECD analytical house price index (open SDMX-JSON) — region trend, weak
-   ;; per-parcel prior. Real: stats.oecd.org / sdmx-json. Parsed as an :index obs.
-   :oecd-hpi
-   {:license :open :region :world
-    :request (fn [{:keys [ref-area]}]
-               {:url    "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES"
+   ;; BIS Selected Property Prices (open SDMX-JSON 2.0, no key) — an INDEPENDENT
+   ;; national house-price index. Corroboration only (kind :index): it never
+   ;; votes a £ level, it diversifies authority. Real:
+   ;;   GET https://stats.bis.org/api/v2/data/dataflow/BIS/WS_SPP/1.0/Q.<cc>.N.628
+   :bis
+   {:license :open :region :world :authority :bis
+    :request (fn [{:keys [bis-key]}]
+               {:url    (str "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_SPP/1.0/"
+                             (or bis-key "Q.GB.N.628"))
                 :method :get
                 :headers {"accept" "application/vnd.sdmx.data+json"}
-                :query  {"refArea" (str ref-area) "format" "jsondata"}})
-    :parse   (fn [{:keys [index-value currency age-days]} _]
-               ;; Pre-projected in fixtures: the index → a per-parcel anchor.
-               (when index-value
-                 [{:value index-value :currency (or currency :usd) :kind :index
-                   :confidence 0.40 :age-days (or age-days 90)}]))}})
+                :query  {"lastNObservations" "1" "format" "jsondata"}})
+    :parse   (fn [body _]
+               (when-let [idx (sdmx-latest body)]
+                 [{:value idx :currency :index :kind :index :confidence 0.45
+                   :age-days 60}]))}
 
-(defn- stamp [source license partials]
-  (mapv #(assoc % :source source :license license) partials))
+   ;; OECD Analytical house prices (open SDMX-JSON, no key) — independent index.
+   ;; Real: sdmx.oecd.org/public/rest/data/…@DF_HOUSE_PRICES/<area>.Q.RHPI
+   :oecd-hpi
+   {:license :open :region :world :authority :oecd
+    :request (fn [{:keys [ref-area]}]
+               {:url    (str "https://sdmx.oecd.org/public/rest/data/"
+                             "OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES/"
+                             (or ref-area "GBR") ".Q.RHPI")
+                :method :get
+                :headers {"accept" "application/vnd.sdmx.data+json"}
+                :query  {"lastNObservations" "1" "format" "jsondata"}})
+    :parse   (fn [body _]
+               (when-let [idx (sdmx-latest body)]
+                 [{:value idx :currency :index :kind :index :confidence 0.40
+                   :age-days 90}]))}})
+
+(defn- stamp [source license authority partials]
+  (mapv #(assoc % :source source :license license
+                  :authority (or authority source)) partials))
 
 (defn fetch-source
   "Call ONE adapter and return its stamped Observations (or [] on error —
   one dead source must never sink the whole valuation)."
   [{:keys [http-fn json-read] :as _host-caps} source params]
-  (let [{:keys [request parse license]} (get adapters source)]
+  (let [{:keys [request parse license authority]} (get adapters source)]
     (if-not request
       []
       (try
@@ -105,7 +140,7 @@
               ok?  (#{200 201} (:status resp))
               body (when ok? (json-read (:body resp)))]
           (if ok?
-            (stamp source license (parse body params))
+            (stamp source license authority (parse body params))
             []))
         (catch #?(:clj Throwable :cljs :default) _e [])))))
 
@@ -122,6 +157,7 @@
 (def ^:private source-base-url
   {:jp-registry "reinfolib.mlit.go.jp"
    :uk-landreg  "landregistry.data.gov.uk"
+   :bis         "stats.bis.org"
    :oecd-hpi    "sdmx.oecd.org"})
 
 (defn fixture-caps

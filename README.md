@@ -58,12 +58,24 @@ from recorded fixtures) → `ParcelActor` fuse/govern → `com.atproto.repo.putR
 to the PDS (dry-run) → `ModelFlywheelActor` backtest-vs-realized-sales →
 reliability recalibration. Swap the injected http-fn / token / clock to go live.
 
+`:live-real` makes **real network calls** to two independent open authorities —
+**HM Land Registry** Price Paid (recorded £ sales, the anchor) and **BIS**
+Selected Property Prices (national index, corroboration) — fuses, clears the
+publish gate, and emits a per-parcel `valuation` plus an aggregate `regionReport`
+(both dry-run). Example (`PL6 8RU`): 12 real comps + BIS → publishable, point
+≈ $277k, regionReport median ≈ $302k. The £ point comes only from recorded
+sales; the index never votes a level — it only diversifies **authority**. The
+gate is honest: a point publishes only with **≥3 independent recorded comps**
+AND **≥2 independent authorities** AND a fresh anchor; a single authority (even
+with many comps) is refused.
+
 ## Layout
 
 | File | Actor / role |
 |---|---|
 | `src/kenchi/sources.cljc` | **IngestActor (mock feeds)** — per-source stamped Observations for the offline demo |
-| `src/kenchi/ingest.cljc` | **IngestActor (live wiring)** — real source adapters (MLIT/HM Land Registry/OECD), injected HTTP I/O, fixture caps |
+| `src/kenchi/ingest.cljc` | **IngestActor (live wiring)** — real source adapters (MLIT / HM Land Registry / BIS / OECD), authority-stamped, injected HTTP I/O, fixture caps |
+| `src/kenchi/http.clj` | real `java.net.http` + `data.json` host-caps — the production swap for fixture-caps |
 | `src/kenchi/fusion.cljc` | **ValuationEngine** — robust multi-source ensemble + CI; per-source reliability (flywheel-tuned) |
 | `src/kenchi/governor.cljc` | **ProvenanceGovernor / LicenseGovernor** — N-source gate, ToS clear, outlier reject, MRV |
 | `src/kenchi/parcel.cljc` | **ParcelActor** — the langgraph-clj StateGraph (1 run = 1 valuation) |

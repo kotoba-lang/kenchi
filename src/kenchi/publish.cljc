@@ -65,6 +65,24 @@
   [rec]
   (-> (:parcel rec) (str/replace #"[^A-Za-z0-9._-]" "-") (str/lower-case)))
 
+(defn ->region-record
+  "Map a region aggregate (kenchi.fusion/region-aggregate + region/h3/license)
+  to the on-wire `com.junkawasaki.kenchi.regionReport` record. AGGREGATE-ONLY:
+  names no parcel, so it is publishable even where per-parcel valuation is
+  barred. `at` is an injected ISO-8601 timestamp."
+  [{:keys [region h3 median-usd-micros p25-usd-micros p75-usd-micros n-comps license]} at]
+  (let [usd (fn [m] (when m (format "%.2f" (/ (double m) 1e6))))]
+    {"$type"        region-collection
+     "region"       region
+     "h3"           h3
+     "medianUsd"    (usd median-usd-micros)
+     "p25Usd"       (usd p25-usd-micros)
+     "p75Usd"       (usd p75-usd-micros)
+     "nComps"       n-comps
+     "license"      (name (or license :open))
+     "asof"         at
+     "createdAt"    at}))
+
 ;; ─────────────────────────────── publish ────────────────────────────────
 
 (defn publishable?
@@ -98,3 +116,23 @@
                           {:status (:status resp) :body (:body resp)})))
         (let [out (json-read (:body resp))]
           {:status :ok :uri (or (:uri out) uri) :cid (:cid out)})))))
+
+(defn put-region-record!
+  "PUT one region aggregate to the PDS as a regionReport (rkey = region|h3).
+  Dry-run by default (no :token) → returns the AT-URI it would write."
+  [{:keys [http-fn json-write json-read] :as _caps} conn region-agg at
+   & [{:keys [dry-run?]}]]
+  (let [rk   (-> (str (:region region-agg) "-" (:h3 region-agg))
+                 (str/replace #"[^A-Za-z0-9._-]" "-") str/lower-case)
+        uri  (str "at://" (:pds/did conn) "/" region-collection "/" rk)
+        body {"repo" (:pds/did conn) "collection" region-collection
+              "rkey" rk "record" (->region-record region-agg at)}]
+    (if (or dry-run? (nil? (:pds/token conn)))
+      {:status :dry-run :uri uri :record (get body "record")}
+      (let [resp (http-fn {:url (xrpc-url conn "com.atproto.repo.putRecord")
+                           :method :post :headers (headers conn)
+                           :body (json-write body)})]
+        (when-not (#{200 201} (:status resp))
+          (throw (ex-info (str "PDS putRecord error " (:status resp))
+                          {:status (:status resp) :body (:body resp)})))
+        {:status :ok :uri uri}))))
