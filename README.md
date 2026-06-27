@@ -1,12 +1,48 @@
-# kenchi-actor 検地
+# kenchi-clj 検地
 
-A **worldwide real-estate valuation actor** that fuses *many disagreeing
-sources* into one **provenance-stamped, uncertainty-quantified** value and
-**publishes** it — expressed on this workspace's
-[`langgraph-clj`](https://github.com/com-junkawasaki/langgraph-clj)
-StateGraph runtime (portable `.cljc`, supervised superstep loop, interrupts,
-Datomic/in-mem checkpoints), published over the same ATProto/Aozora +
-Murakumo surfaces as [`toritate`](../../etzhayyim/root/20-actors/toritate).
+A **provenance-gated, multi-source real-estate valuation library** for
+Clojure(Script). Give it canonical Observations gathered from many *disagreeing,
+independent* authorities and it returns a fused, **uncertainty-quantified**
+EXTERNAL-MARKET value — or it **refuses** (a wide band, or insufficient-evidence)
+when the evidence can't defend a point. No single source is trusted; the
+ProvenanceGovernor is the product.
+
+Portable `.cljc` (JVM / SCI / ClojureScript / GraalVM) on this workspace's
+[`langgraph-clj`](https://github.com/com-junkawasaki/langgraph-clj) /
+[`langchain-clj`](https://github.com/com-junkawasaki/langchain-clj) layering;
+I/O is injected (no hard HTTP/JSON dep). It also ships the optional **actor**
+(`kenchi.parcel` = a langgraph-clj StateGraph, 1 run = 1 valuation) and publishes
+over the same ATProto/Aozora + Murakumo surfaces as
+[`toritate`](../../etzhayyim/root/20-actors/toritate). It is the engine behind the
+published etzhayyim actor [`com-etzhayyim-kenchi`](https://github.com/etzhayyim/com-etzhayyim-kenchi).
+
+## As a library
+
+```clojure
+;; deps.edn
+io.github.com-junkawasaki/kenchi-clj {:local/root "../kenchi-clj"}   ; or :git/url + :git/sha
+
+(require '[kenchi.core :as kenchi])
+
+(kenchi/value
+  [(kenchi/observation {:authority :hm-land-registry :kind :sale  :value 250000 :currency :gbp :age-days 200})
+   (kenchi/observation {:authority :hm-land-registry :kind :sale  :value 310000 :currency :gbp :age-days 365})
+   (kenchi/observation {:authority :hm-land-registry :kind :sale  :value 275000 :currency :gbp :age-days 700})
+   (kenchi/observation {:authority :bis              :kind :index :value 112.4  :currency :index})])
+;; => {:verdict :published
+;;     :valuation {:value-usd-micros … :n-comps 3 :n-authorities 2 :license :open :provenance […]}
+;;     :provenance {…outliers, violations, kept…}}
+
+;; thin evidence is refused, never faked:
+(kenchi/value [obs])  ;; => {:verdict :withheld-mrv :band {:lo … :hi …}}
+
+(kenchi/region-report observations)  ;; => {:median-usd-micros … :p25… :p75… :n-comps …}  (AGGREGATE-ONLY)
+```
+
+`kenchi.core` is the whole public surface: `observation` (normalize), `value`
+(fuse + govern → published / withheld-mrv / insufficient-evidence),
+`region-report` (aggregate), `gate` (active thresholds). Everything else is an
+opt-in layer (ingest / http / commoncrawl / parcel / publish / flywheel).
 
 > **検地** (*kenchi*) — Hideyoshi's cadastral land survey that, for the first
 > time, measured and ledgered the value of land across an entire realm. This
@@ -71,8 +107,9 @@ with many comps) is refused.
 
 ## Layout
 
-| File | Actor / role |
+| File | Role |
 |---|---|
+| `src/kenchi/core.cljc` | **the library facade** — `observation` / `value` / `region-report` / `gate` (the whole public API) |
 | `src/kenchi/sources.cljc` | **IngestActor (mock feeds)** — per-source stamped Observations for the offline demo |
 | `src/kenchi/ingest.cljc` | **IngestActor (live wiring)** — real source adapters (MLIT / HM Land Registry / BIS / OECD), authority-stamped, injected HTTP I/O, fixture caps |
 | `src/kenchi/commoncrawl.clj` | **IngestActor — Common Crawl** — web-scale portal *asking* prices from the open crawl (CC index → WARC range-fetch → price extract), `:list` / `:derived-only`, rentals excluded |

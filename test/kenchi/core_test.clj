@@ -1,0 +1,34 @@
+(ns kenchi.core-test
+  "The library facade — kenchi.core/value is the one entry point a consumer
+  calls; it must return published / withheld-mrv / insufficient-evidence."
+  (:require [clojure.test :refer [deftest is testing]]
+            [kenchi.core :as kenchi]))
+
+(defn- sales [& vs]
+  (mapv #(kenchi/observation {:authority :hm-land-registry :kind :sale
+                              :value % :currency :gbp :age-days 200}) vs))
+
+(deftest value-publishes-on-comps-plus-authority
+  (let [r (kenchi/value
+           (conj (sales 250000 310000 275000)
+                 (kenchi/observation {:authority :bis :kind :index :value 112.4 :currency :index})))]
+    (is (= :published (:verdict r)))
+    (is (= 3 (:n-comps (:valuation r))))
+    (is (= 2 (:n-authorities (:valuation r))))
+    (is (pos? (:value-usd-micros (:valuation r))))))      ; index did not vote the £
+
+(deftest value-withholds-on-thin-evidence
+  (let [r (kenchi/value (sales 250000))]
+    (is (= :withheld-mrv (:verdict r)))
+    (is (nil? (:valuation r)))
+    (is (< (:lo (:band r)) (:hi (:band r))))))
+
+(deftest value-insufficient-on-no-price-anchor
+  (testing "indices alone (no recorded comps) cannot produce a point"
+    (let [r (kenchi/value [(kenchi/observation {:authority :bis :kind :index :value 112.4 :currency :index})])]
+      (is (= :insufficient-evidence (:verdict r))))))
+
+(deftest region-report-is-aggregate-only
+  (let [agg (kenchi/region-report (sales 200000 250000 300000))]
+    (is (= 3 (:n-comps agg)))
+    (is (pos? (:median-usd-micros agg)))))
