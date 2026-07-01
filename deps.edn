@@ -1,16 +1,16 @@
 ;; kenchi-clj — provenance-gated, multi-source real-estate valuation library.
-;; Coordinate: io.github.com-junkawasaki/kenchi-clj  · public API: kenchi.core
+;; Coordinate: io.github.kotoba-lang/kenchi  · public API: kenchi.core
 {:paths ["src"]
  ;; langgraph-clj brings langchain-clj transitively (both zero-/single-dep,
  ;; all .cljc → portable to JVM / SCI / ClojureScript / GraalVM). The pure core
  ;; (kenchi.core/fusion/governor) needs neither; langgraph-clj is for the
  ;; optional actor (kenchi.parcel). Same runtime the robotaxi-actor sits on.
- :deps {io.github.com-junkawasaki/langgraph-clj
-        {:local/root "../langgraph-clj"}}
+ :deps {io.github.kotoba-lang/langgraph
+        {:local/root "../langgraph"}}
  :aliases
  {;; offline workspace dev — pin transitive langchain-clj to local checkout
   :dev {:override-deps
-        {io.github.com-junkawasaki/langchain-clj {:local/root "../langchain-clj"}}}
+        {io.github.kotoba-lang/langchain {:local/root "../langchain"}}}
   ;; clojure -M:dev:run  → value one parcel through three scenarios (mock feeds)
   :run {:main-opts ["-m" "kenchi.sim"]}
   ;; clojure -M:dev:live → full live-wiring pipeline offline: real adapters

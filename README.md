@@ -8,8 +8,8 @@ when the evidence can't defend a point. No single source is trusted; the
 ProvenanceGovernor is the product.
 
 Portable `.cljc` (JVM / SCI / ClojureScript / GraalVM) on this workspace's
-[`langgraph-clj`](https://github.com/com-junkawasaki/langgraph-clj) /
-[`langchain-clj`](https://github.com/com-junkawasaki/langchain-clj) layering;
+[`langgraph`](https://github.com/kotoba-lang/langgraph) /
+[`langchain`](https://github.com/kotoba-lang/langchain) layering;
 I/O is injected (no hard HTTP/JSON dep). It also ships the optional **actor**
 (`kenchi.parcel` = a langgraph-clj StateGraph, 1 run = 1 valuation) and publishes
 over the same ATProto/Aozora + Murakumo surfaces as
@@ -20,7 +20,7 @@ published etzhayyim actor [`com-etzhayyim-kenchi`](https://github.com/etzhayyim/
 
 ```clojure
 ;; deps.edn
-io.github.com-junkawasaki/kenchi-clj {:local/root "../kenchi-clj"}   ; or :git/url + :git/sha
+io.github.kotoba-lang/kenchi {:local/root "../kenchi"}   ; or :git/url + :git/sha
 
 (require '[kenchi.core :as kenchi])
 
@@ -82,7 +82,7 @@ That single invariant is what makes a fused number defensible in public.
 ```bash
 clojure -M:dev:run     # value one parcel through 3 scenarios (mock feeds)
 clojure -M:dev:live    # full pipeline: real adapters → fuse/govern → PDS → flywheel
-clojure -M:dev:test    # the provenance + live-wiring contracts as tests
+clojure -M:test        # the provenance + live-wiring contracts as tests
 ```
 
 `:run` walks one parcel through: rich agreement (6 sources, tight CI → published)
