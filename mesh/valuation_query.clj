@@ -13,9 +13,14 @@
 (ns valuation-query)
 
 (defn- parcel-of [req]
-  ;; req bytes → parcel id. Accepts "parcel=<id>" (query/body); falls back to raw.
+  ;; req bytes → parcel id. Accepts "parcel=<id>" (query/body); falls back to
+  ;; raw. Plain subs/count only — the kotoba-clj reader has NO regex literals
+  ;; (#"…" fails Read; found deploying this component, ADR-2607071500 系列),
+  ;; so the id is the prefix-stripped remainder (no &-param splitting).
   (let [s (str req)]
-    (if-let [m (re-find #"parcel=([^&\s]+)" s)] (second m) s)))
+    (if (and (>= (count s) 7) (= (subs s 0 7) "parcel="))
+      (subs s 7)
+      s)))
 
 ;; generic invoke / placement probe
 (defn run [_ctx]
