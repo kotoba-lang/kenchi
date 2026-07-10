@@ -43,6 +43,26 @@
       (is (= :valuation (:kind rec)))
       (is (= :derived-only (:license rec))))))
 
+(deftest unrecognized-license-withholds-instead-of-defaulting-open
+  ;; publish-license's cond used to fall through any license value outside
+  ;; #{:restricted :derived-only} straight to :open (the LEAST restrictive
+  ;; classification) -- an unrecognized/nil license (a typo, a new adapter
+  ;; not yet updated to this governor's vocabulary, or a malformed
+  ;; observation) would silently be treated as raw-republishable instead
+  ;; of withheld, even though this governor is the only defense-in-depth
+  ;; checkpoint between an adapter's stamped license and publication
+  ;; (kenchi.sources/obs performs no validation of its own).
+  (testing "an unrecognized license value forces :withhold, not :open"
+    (is (= :withhold (gov/publish-license
+                       [{:source :mystery-adapter :license :some-unknown-kind}]))))
+  (testing "a nil license value forces :withhold, not :open"
+    (is (= :withhold (gov/publish-license
+                       [{:source :malformed-adapter :license nil}]))))
+  (testing "an unrecognized license mixed with known-open sources still withholds"
+    (is (= :withhold (gov/publish-license
+                       [{:source :ok-adapter :license :open}
+                        {:source :mystery-adapter :license :some-unknown-kind}])))))
+
 (deftest outlier-is-quarantined
   (testing "a 250M scraper outlier is dropped before the estimate"
     (let [obs (sources/observe sources/demo-parcel :restricted)

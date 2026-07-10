@@ -39,14 +39,30 @@
 
 ;; ───────────────────────────── 3. license clear ──────────────────────────────
 
+(def known-licenses
+  "The closed license vocabulary an ingest adapter is documented to stamp
+  (kenchi.sources's canonical Observation shape). Anything outside this
+  set -- an unrecognized value, nil, or a future stricter license kind a
+  new adapter introduces before this governor is updated to handle it --
+  is UNKNOWN rights, not :open rights."
+  #{:open :derived-only :restricted})
+
 (defn publish-license
   "The published record's license = the most restrictive contributing source.
   open everywhere → :open (raw republishable). Any derived-only/restricted in
   the mix → :derived-only (no raw passthrough; the fused number is a new work).
-  A source that forbids any derived use would force :withhold (none here)."
+  A source that forbids any derived use would force :withhold.
+
+  Any observation carrying a license outside known-licenses (unrecognized,
+  nil, or a future value not yet in this closed vocabulary) forces
+  :withhold too -- fail CLOSED on unknown rights, never assume the least
+  restrictive :open. This governor is the only defense-in-depth checkpoint
+  between an ingest adapter's stamped license and publication; a source
+  constructor (kenchi.sources/obs) performs no validation of its own."
   [observations]
   (let [ls (set (map :license observations))]
     (cond
+      (some #(not (contains? known-licenses %)) ls) :withhold
       (contains? ls :restricted)   :derived-only  ; usable Murakumo-only; publish derived
       (contains? ls :derived-only) :derived-only
       :else                        :open)))
