@@ -6,7 +6,8 @@
  ;; (kenchi.core/fusion/governor) needs neither; langgraph-clj is for the
  ;; optional actor (kenchi.parcel). Same runtime the robotaxi-actor sits on.
  :deps {io.github.kotoba-lang/langgraph
-        {:local/root "../langgraph"}}
+        {:git/url "https://github.com/kotoba-lang/langgraph.git"
+                                     :git/sha "577a59a9d5eb3ef90b81342f4673973f481ff7f4"}}
  :aliases
  {;; offline workspace dev — pin transitive langchain-clj to local checkout
   :dev {:override-deps
