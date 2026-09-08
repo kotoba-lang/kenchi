@@ -18,7 +18,7 @@
   proposals. ProvenanceGovernor and LicenseGovernor censor downstream."
   (:require #?(:clj  [clojure.edn :as edn]
                :cljs [cljs.reader :as edn])
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 ;; ─────────────────────────────── adapters ───────────────────────────────
 ;; Each adapter declares how to CALL a real source and how to PARSE it into
