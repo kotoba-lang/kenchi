@@ -19,7 +19,7 @@
   I/O injected (ADR-0001): index-query uses :http-fn/:json-read (testable
   offline via fixtures); fetch-record is a passed-in thunk so the binary WARC
   range-fetch (kenchi.http/range-text) is swapped for a fixture in tests."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def default-crawl
   "A monthly crawl id (see https://index.commoncrawl.org/collinfo.json). Newer

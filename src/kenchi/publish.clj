@@ -12,7 +12,7 @@
   The ONE invariant this module enforces at the wire: it refuses to PUT a
   record whose license stamp says it cannot leave (`:withhold`), and it
   publishes ToS-restricted inputs only as a derived record — never raw."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def collection "com.junkawasaki.kenchi.valuation")
 (def region-collection "com.junkawasaki.kenchi.regionReport")
@@ -63,7 +63,7 @@
   "Deterministic record key = sanitized parcel id, so re-valuing a parcel
   UPDATES its record (putRecord) instead of piling up history."
   [rec]
-  (-> (:parcel rec) (str/replace #"[^A-Za-z0-9._-]" "-") (str/lower-case)))
+  (-> (:parcel rec) (str/replace #"[^A-Za-z0-9._-]" "-") (str/lower)))
 
 (defn ->region-record
   "Map a region aggregate (kenchi.fusion/region-aggregate + region/h3/license)
@@ -123,7 +123,7 @@
   [{:keys [http-fn json-write json-read] :as _caps} conn region-agg at
    & [{:keys [dry-run?]}]]
   (let [rk   (-> (str (:region region-agg) "-" (:h3 region-agg))
-                 (str/replace #"[^A-Za-z0-9._-]" "-") str/lower-case)
+                 (str/replace #"[^A-Za-z0-9._-]" "-") str/lower)
         uri  (str "at://" (:pds/did conn) "/" region-collection "/" rk)
         body {"repo" (:pds/did conn) "collection" region-collection
               "rkey" rk "record" (->region-record region-agg at)}]

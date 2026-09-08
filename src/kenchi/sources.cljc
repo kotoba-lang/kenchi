@@ -13,7 +13,7 @@
   地価公示, HM Land Registry, a portal, an index, OSM). Here they're
   deterministic mocks so the actor graph runs offline and the publish
   contract is exercised end-to-end."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ─────────────────────────── canonical Observation ───────────────────────────
 ;; {:value     number   — in :currency units
@@ -75,5 +75,5 @@
   published number defensible (the analogue of AR1's CoC trace)."
   [{:keys [source kind value currency age-days license]}]
   (str (name source) " " (name kind) " "
-       value (str/upper-case (name currency))
+       value (str/upper (name currency))
        " (" age-days "d, " (name license) ")"))
