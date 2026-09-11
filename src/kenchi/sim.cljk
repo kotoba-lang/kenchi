@@ -8,7 +8,7 @@
     scenario 3  restricted  → portal AVM is derived-only + a gross outlier →
                               outlier quarantined, POINT published DERIVED-ONLY
 
-  Run: clojure -M:dev:run"
+  Run: kbb -M:dev:run"
   (:require [langgraph.graph :as g]
             [kenchi.parcel :as parcel]
             [kenchi.sources :as sources]))

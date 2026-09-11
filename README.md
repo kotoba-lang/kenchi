@@ -80,9 +80,9 @@ That single invariant is what makes a fused number defensible in public.
 ## Run
 
 ```bash
-clojure -M:dev:run     # value one parcel through 3 scenarios (mock feeds)
-clojure -M:dev:live    # full pipeline: real adapters → fuse/govern → PDS → flywheel
-clojure -M:test        # the provenance + live-wiring contracts as tests
+kbb -M:dev:run     # value one parcel through 3 scenarios (mock feeds)
+kbb -M:dev:live    # full pipeline: real adapters → fuse/govern → PDS → flywheel
+kbb -M:test        # the provenance + live-wiring contracts as tests
 ```
 
 `:run` walks one parcel through: rich agreement (6 sources, tight CI → published)

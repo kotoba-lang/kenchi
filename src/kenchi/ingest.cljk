@@ -162,7 +162,7 @@
 
 (defn fixture-caps
   "Host-caps that serve recorded EDN bodies instead of hitting the network —
-  so `clojure -M:dev:run` exercises the real request/parse path offline.
+  so `kbb -M:dev:run` exercises the real request/parse path offline.
   `fixtures` : {source => decoded-body}. json-read just returns the body
   (fixtures are already decoded EDN, mirroring what a real json-read yields)."
   [fixtures]
