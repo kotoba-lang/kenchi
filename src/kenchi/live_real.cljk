@@ -12,8 +12,8 @@
   AND ≥2 independent authorities AND a fresh anchor. Land Registry's comps +
   BIS corroboration clear it on real data; no source is trusted alone.
 
-    clojure -M:live-real             ; default postcode
-    clojure -M:live-real \"SW1A 1AA\"  ; any UK postcode
+    kbb -M:live-real             ; default postcode
+    kbb -M:live-real \"SW1A 1AA\"  ; any UK postcode
 
   This hits the public internet."
   (:require [kenchi.http :as http]

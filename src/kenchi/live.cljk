@@ -7,7 +7,7 @@
   fixture-caps→a real http client, dry-run?→a session token, and the demo
   timestamp→(java.time/now) and it talks to live APIs and a real PDS.
 
-  Run: clojure -M:dev:live"
+  Run: kbb -M:dev:live"
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [langgraph.graph :as g]

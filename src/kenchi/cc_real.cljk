@@ -4,8 +4,8 @@
   :list / :derived-only observations and folds them with HM Land Registry
   sales + BIS index through the publish gate.
 
-    clojure -M:cc-real                         ; default: rightmove sale listings
-    clojure -M:cc-real \"zoopla.co.uk/for-sale/details/*\" 8
+    kbb -M:cc-real                         ; default: rightmove sale listings
+    kbb -M:cc-real \"zoopla.co.uk/for-sale/details/*\" 8
 
   This hits the public internet (index.commoncrawl.org + data.commoncrawl.org)."
   (:require [kenchi.http :as http]
