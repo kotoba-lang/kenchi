@@ -65,7 +65,7 @@ Principles:
 
 ## 3. ParcelActor internals (the fusion wrapper)
 
-Implemented as a langgraph-clj StateGraph in `src/kenchi/parcel.cljc`.
+Implemented as a langgraph-clj StateGraph in `src/kenchi/parcel.cljk`.
 **One graph run = one valuation tick** — bounded and auditable, not an
 unbounded loop.
 
@@ -85,7 +85,7 @@ Channels: `:observations :parcel :estimate :provenance-verdict :record :audit`.
 
 ## 4. ProvenanceGovernor — the layer that earns the right to publish
 
-`src/kenchi/governor.cljc`. The most important component, deliberately built
+`src/kenchi/governor.cljk`. The most important component, deliberately built
 *independent* of the fusion engine (a different code path may not share its
 bugs or its optimism).
 
@@ -102,7 +102,7 @@ universe widens as the flywheel proves the fusion calibrated in a region.
 
 ## 5. ValuationEngine — robust multi-source fusion
 
-`src/kenchi/fusion.cljc`. Canonical types:
+`src/kenchi/fusion.cljk`. Canonical types:
 
 - **Parcel** — `{id, h3, region, ...}` (geo key = H3 cell and/or cadastral id).
 - **Observation** — `{value, kind ∈ #{assessment list sale index avm}, currency,

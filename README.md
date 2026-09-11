@@ -109,16 +109,16 @@ with many comps) is refused.
 
 | File | Role |
 |---|---|
-| `src/kenchi/core.cljc` | **the library facade** — `observation` / `value` / `region-report` / `gate` (the whole public API) |
-| `src/kenchi/sources.cljc` | **IngestActor (mock feeds)** — per-source stamped Observations for the offline demo |
-| `src/kenchi/ingest.cljc` | **IngestActor (live wiring)** — real source adapters (MLIT / HM Land Registry / BIS / OECD), authority-stamped, injected HTTP I/O, fixture caps |
-| `src/kenchi/commoncrawl.clj` | **IngestActor — Common Crawl** — web-scale portal *asking* prices from the open crawl (CC index → WARC range-fetch → price extract), `:list` / `:derived-only`, rentals excluded |
-| `src/kenchi/http.clj` | real `java.net.http` + `data.json` host-caps (incl. gzip WARC range-fetch) — the production swap for fixture-caps |
-| `src/kenchi/fusion.cljc` | **ValuationEngine** — robust multi-source ensemble + CI; per-source reliability (flywheel-tuned) |
-| `src/kenchi/governor.cljc` | **ProvenanceGovernor / LicenseGovernor** — N-source gate, ToS clear, outlier reject, MRV |
-| `src/kenchi/parcel.cljc` | **ParcelActor** — the langgraph-clj StateGraph (1 run = 1 valuation) |
+| `src/kenchi/core.cljk` | **the library facade** — `observation` / `value` / `region-report` / `gate` (the whole public API) |
+| `src/kenchi/sources.cljk` | **IngestActor (mock feeds)** — per-source stamped Observations for the offline demo |
+| `src/kenchi/ingest.cljk` | **IngestActor (live wiring)** — real source adapters (MLIT / HM Land Registry / BIS / OECD), authority-stamped, injected HTTP I/O, fixture caps |
+| `src/kenchi/commoncrawl.cljk` | **IngestActor — Common Crawl** — web-scale portal *asking* prices from the open crawl (CC index → WARC range-fetch → price extract), `:list` / `:derived-only`, rentals excluded |
+| `src/kenchi/http.cljk` | real `java.net.http` + `data.json` host-caps (incl. gzip WARC range-fetch) — the production swap for fixture-caps |
+| `src/kenchi/fusion.cljk` | **ValuationEngine** — robust multi-source ensemble + CI; per-source reliability (flywheel-tuned) |
+| `src/kenchi/governor.cljk` | **ProvenanceGovernor / LicenseGovernor** — N-source gate, ToS clear, outlier reject, MRV |
+| `src/kenchi/parcel.cljk` | **ParcelActor** — the langgraph-clj StateGraph (1 run = 1 valuation) |
 | `src/kenchi/publish.cljc` | **PublishActor** — ATProto PDS `putRecord` client (kotoba-db I/O idiom), wire-level license gate |
-| `src/kenchi/flywheel.cljc` | **ModelFlywheelActor** — backtest vs realized sales → recalibrate reliability |
+| `src/kenchi/flywheel.cljk` | **ModelFlywheelActor** — backtest vs realized sales → recalibrate reliability |
 | `src/kenchi/sim.cljc` / `live.clj` | mock demo / live-wiring demo |
 | `test/kenchi/*_test.clj` | publish invariant + ingest/publish/flywheel contracts |
 | `lexicons/com/junkawasaki/kenchi/valuation.json` | the published record schema (ATProto lexicon) |

@@ -104,7 +104,7 @@ langgraph-clj（→ langchain-clj、ともに `.cljc`）の上に構築。JVM/SC
 
 - **実物（スキャフォールド）**: アクター・トポロジ、公開不変条件、N-source ゲート、
   ライセンス行列、外れ値拒否、MRV フォールバック、ロバスト融合＋CI、来歴トレイル。
-  公開コントラクトは `test/kenchi/provenance_contract_test.clj` で実行可能を意図。
+  公開コントラクトは `test/kenchi/provenance_contract_test.cljk` で実行可能を意図。
 - **モック（本番差し替え点）**: `sources/fetch`→各ソース実 API（assessor/MLIT/registry/
   portal/index/OSM）、`resolve`→実エンティティ解決（H3/地籍突合）、FX 正規化→実レート、
   `publish`→実 PDS 書き込み。
