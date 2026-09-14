@@ -12,7 +12,8 @@
   The ONE invariant this module enforces at the wire: it refuses to PUT a
   record whose license stamp says it cannot leave (`:withhold`), and it
   publishes ToS-restricted inputs only as a derived record — never raw."
-  (:require [kotoba.lang.text :as str]))
+  (:require [kotoba.lang.text :as str :refer [format]])
+  (:refer-clojure :exclude [format]))
 
 (def collection "com.junkawasaki.kenchi.valuation")
 (def region-collection "com.junkawasaki.kenchi.regionReport")

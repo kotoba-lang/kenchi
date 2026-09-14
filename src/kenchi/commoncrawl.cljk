@@ -91,7 +91,7 @@
         caps  {:http-fn http-fn :json-read json-read}]
     (->> (index-query caps crawl pattern limit)
          (keep (fn [cap]
-                 (when-let [text (try (fetch-record cap) (catch Throwable _ nil))]
+                 (when-let [text (try (fetch-record cap) (catch :default _ nil))]
                    (when-let [{:keys [value currency]} (extract-price text)]
                      {:value value :currency currency :kind :list
                       :license :derived-only
