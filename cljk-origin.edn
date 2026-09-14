@@ -19,6 +19,8 @@
   "src/kenchi/publish.cljk" ".cljc"
   "src/kenchi/sim.cljk" ".clj"
   "src/kenchi/sources.cljk" ".cljc"
+  "src/kenchi/contrib.cljk" ".cljc"
+  "test/kenchi/contrib_test.cljk" ".cljc"
   "test/kenchi/commoncrawl_test.cljk" ".cljc"
   "test/kenchi/core_test.cljk" ".cljc"
   "test/kenchi/live_pipeline_test.cljk" ".cljc"
