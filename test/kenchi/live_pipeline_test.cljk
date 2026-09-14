@@ -106,7 +106,8 @@
     (let [conn (publish/pds-conn "https://pds.example" "did:web:example")
           caps {:json-write pr-str :json-read identity :http-fn (fn [_] {:status 200 :body {}})}]
       (is (false? (publish/publishable? (assoc cleared :license :withhold))))
-      (is (thrown? Exception
+      ;; kbb/cljs has no java.lang.Exception; js/Error is the thrown type there.
+      (is (thrown? #?(:clj Exception :cljs js/Error)
                    (publish/put-record! caps conn (assoc cleared :license :withhold)
                                         "2026-06-27T00:00:00Z"))))))
 
