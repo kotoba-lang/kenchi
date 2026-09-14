@@ -1,0 +1,111 @@
+(ns kenchi.contrib
+  "Member-submitted Observation membrane (ADR-2609141320) — the ACCEPT path
+  for contributions from outside the operator's own ingest adapters.
+
+  What a member submission IS here: one more Observation stamped with an
+  attribution (:member / did) inside :source, entering the SAME canonical
+  shape every other source uses. It is NOT a privileged channel:
+
+    - a member submission counts as ONE source (the :authority, defaulting to
+      the submitter's :source identity, is the independence key);
+    - a point estimate stays un-shootable from submissions alone — the
+      ProvenanceGovernor's N-source / license / MRV gates are UNCHANGED;
+    - attribution is mandatory: no did -> refuse (fail closed);
+    - license is mandatory and must be in the governor's closed vocabulary:
+      an unknown/nil license withholds (governor.publish-license already
+      fails closed; this ns refuses early with a named reason instead of
+      letting a shapeless obs travel further).
+
+  The pipeline (the measuring bot yata-contrib-gate calls these stages):
+
+    submit -> kenchi.contrib/accept        (attribution + shape validation)
+           -> governor (kenchi.governor)   (UNCHANGED — the product)
+           -> kenchi.core/value            (same verdicts as any other path)
+
+  A member submission NEVER publishes by itself; it only enters the cloud
+  of Observations that the governor fuses. PDS fetch wiring lives with the
+  operator's ingest adapters (kenchi.ingest); this ns stays offline-pure."
+  (:require [kenchi.core :as kenchi]
+            [kenchi.governor :as gov]
+            [kotoba.lang.text :as str]))
+
+(def member-authority-kind :member)
+
+(def submission-kinds
+  "Kinds a member may submit. Recorded sales (:sale) from members are
+  welcome — but they anchor the point only with the governor's normal
+  independence requirements (>= min-comps across >= min-authorities).
+  :index is deliberately EXCLUDED: an index is an authority artifact, and
+  kenchi.core's rule is that indices corroborate, never vote the price."
+  #{:sale :assessment :avm :list})
+
+(defn accept
+  "Validate + stamp ONE member submission into a canonical Observation.
+  Returns {:ok? true :observation <obs>} or
+  {:ok? false :reason kw :detail s} — named refusals, never silent drops:
+
+    :no-attribution    — :did (or :source) missing/blank
+    :no-value          — :value missing or not a number
+    :unknown-kind      — :kind not in submission-kinds
+    :unknown-currency  — :currency missing (governor FX covers the rest)
+    :unknown-license   — :license not in governor's closed vocabulary
+
+  :source defaults to the did (so :authority defaults to it too — a member
+  IS an independent source, counted once like any adapter)."
+  [{:keys [did source value kind currency license confidence age-days] :as _m}]
+  (let [attribution (or (and (seq (str source)) source) (and (seq (str did)) did))]
+    (cond
+      (or (nil? attribution) (not (seq attribution)))
+      {:ok? false :reason :no-attribution
+       :detail "member submission requires :did or :source (attribution is mandatory)"}
+
+      (or (nil? value) (not (number? value)))
+      {:ok? false :reason :no-value :detail ":value must be a number"}
+
+      (not (contains? submission-kinds kind))
+      {:ok? false :reason :unknown-kind
+       :detail (str ":kind " (pr-str kind) " not member-submittable (allowed: sale/assessment/avm/list)")}
+
+      (or (nil? currency) (not (contains? #{:gbp :jpy :usd :eur} currency)))
+      {:ok? false :reason :unknown-currency :detail ":currency required (:gbp :jpy :usd :eur)"}
+
+      (not (contains? gov/known-licenses license))
+      {:ok? false :reason :unknown-license
+       :detail ":license must be one of the governor's closed vocabulary (fail closed)"}
+
+      :else
+      {:ok? true
+       :observation
+       {:value value
+        :kind kind
+        :currency currency
+        :license license
+        :age-days (or age-days 0)
+        :confidence (or confidence 0.5)          ; member self-report = low weight
+        :source attribution                       ; attribution IS the source
+        :authority attribution                    ; independence key = the member
+        :attribution {:kind member-authority-kind :did attribution}}})))
+
+(defn accepts
+  "Accept a batch; returns {:kept [...] :refused [{:reason :detail ...}]}.
+  A refused submission is a named refusal (never counted as evidence)."
+  [submissions]
+  (reduce (fn [{:keys [kept refused]} s]
+            (let [r (accept s)]
+              (if (:ok? r)
+                {:kept (conj kept (:observation r)) :refused refused}
+                {:kept kept :refused (conj refused (dissoc r :ok?))})))
+          {:kept [] :refused []}
+          submissions))
+
+(defn value-with-member
+  "The one-call path: fuse member Observations TOGETHER WITH adapter
+  Observations through kenchi.core/value. Member submissions never fly
+  alone — the governor gets a mixed cloud and returns the SAME verdicts
+  as any operator path. Refused submissions are carried on the result
+  under :contrib for the audit trail; they never reach the governor."
+  ([adapter-observations member-observations] (value-with-member adapter-observations member-observations {}))
+  ([adapter-observations member-observations opts]
+   (let [{:keys [kept refused]} (accepts member-observations)
+         result (kenchi/value (into (vec adapter-observations) kept) opts)]
+     (assoc result :contrib {:kept (count kept) :refused refused}))))

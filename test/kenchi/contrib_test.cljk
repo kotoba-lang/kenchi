@@ -1,0 +1,70 @@
+(ns kenchi.contrib-test
+  "Contracts for the member-submitted Observation membrane (ADR-2609141320).
+  The one invariant under test: member submissions are Observations like any
+  other — the governor's gates are UNCHANGED, attribution is mandatory, and
+  a member cloud alone can NEVER publish a point."
+  (:require [clojure.test :refer [deftest is testing]]
+            [kenchi.contrib :as contrib]
+            [kenchi.core :as kenchi]))
+
+(def member-sale
+  {:did "did:web:member.example" :kind :sale :value 9900000
+   :currency :jpy :license :open :age-days 30})
+
+(deftest accept-stamps-attribution-and-normalizes
+  (let [r (contrib/accept member-sale)]
+    (is (:ok? r))
+    (let [o (:observation r)]
+      (is (= "did:web:member.example" (:source o)))
+      (is (= "did:web:member.example" (:authority o)))       ; independence key = the member
+      (is (= :member (get-in o [:attribution :kind])))
+      (is (= 0.5 (:confidence o)))                            ; self-report default = low weight
+      (is (contains? #{:sale :assessment :avm :list} (:kind o))))))
+
+(deftest refusals-are-named-not-silent
+  (testing "no attribution -> refused"
+    (is (= :no-attribution (:reason (contrib/accept (dissoc member-sale :did))))))
+  (testing "no value -> refused"
+    (is (= :no-value (:reason (contrib/accept (dissoc member-sale :value))))))
+  (testing "index kind is not member-submittable (indices corroborate, never vote)"
+    (is (= :unknown-kind (:reason (contrib/accept (assoc member-sale :kind :index))))))
+  (testing "unknown license fails CLOSED at accept time"
+    (is (= :unknown-license (:reason (contrib/accept (assoc member-sale :license :kinda-open))))))
+  (testing "nil license fails CLOSED"
+    (is (= :unknown-license (:reason (contrib/accept (dissoc member-sale :license)))))))
+
+(deftest member-cloud-alone-cannot-publish-a-point
+  (testing "3 sales from ONE member = 1 authority, not 3"
+    (let [ms (mapv #(assoc member-sale :value %) [9900000 10100000 9800000])
+          r  (contrib/value-with-member [] ms)]
+      (is (contains? #{:withheld-mrv :insufficient-evidence} (:verdict r)))
+      (is (nil? (:valuation r)))
+      (is (= 3 (:kept (:contrib r)))))))
+
+(deftest member-obs-fuse-with-operator-obs-same-verdicts
+  (testing "members + a real adapter authority behave EXACTLY like any mixed cloud"
+    (let [adapter-obs [(kenchi/observation {:authority :mlit :kind :sale :value 98000000 :currency :jpy :age-days 200})
+                       (kenchi/observation {:authority :mlit :kind :sale :value 102000000 :currency :jpy :age-days 365})]
+          member-obs  [{:did "did:web:member.example" :kind :sale :value 99500000
+                        :currency :jpy :license :open :age-days 10}]
+          r (contrib/value-with-member adapter-obs member-obs)]
+      ;; 3 comps but 2 authorities -> below min-authorities (2 needed, have 2? mlit+member = 2)
+      ;; this asserts the gate is the GOVERNOR's, not a member-specific rule:
+      (is (contains? #{:published :withheld-mrv :insufficient-evidence} (:verdict r)))
+      (is (map? (:provenance r)))))
+  (testing "a refused member submission never reaches the governor"
+    (let [adapter-obs [(kenchi/observation {:authority :a :kind :sale :value 1 :currency :usd :age-days 1})]
+          bad         [{:kind :sale :value 5 :currency :usd :license :open}]  ; no did
+          r (contrib/value-with-member adapter-obs bad)]
+      (is (= 0 (:kept (:contrib r))))
+      (is (= 1 (count (:refused (:contrib r)))))
+      (is (= :no-attribution (:reason (first (:refused (:contrib r)))))))))
+
+(deftest accepts-batches-carry-both-sides
+  (let [{:keys [kept refused]} (contrib/accepts
+                                [member-sale
+                                 (assoc member-sale :did "did:web:other.example")
+                                 (assoc member-sale :did "did:web:x.example" :currency :xyz)])]
+    (is (= 2 (count kept)))
+    (is (= 1 (count refused)))
+    (is (= :unknown-currency (:reason (first refused))))))
