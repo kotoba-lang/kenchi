@@ -9,9 +9,9 @@
 
   Zero workspace deps beyond data.json; java.net.http ships with the JDK
   (same choice langchain-clj made)."
-  (:require [kotoba.json :as json]
+  (:require [kotoba.http.form-urlencoded :as form-urlencoded] [kotoba.json :as json]
             [kotoba.lang.text :as str])
-  (:import (java.net URI URLEncoder)
+  (:import (java.net URI)
            (java.net.http HttpClient HttpRequest
                           HttpRequest$BodyPublishers HttpResponse$BodyHandlers)
            (java.io ByteArrayInputStream)
@@ -24,8 +24,8 @@
 (defn- encode-query [q]
   (when (seq q)
     (->> q
-         (map (fn [[k v]] (str (URLEncoder/encode (str k) "UTF-8") "="
-                               (URLEncoder/encode (str v) "UTF-8"))))
+         (map (fn [[k v]] (str (form-urlencoded/form-encode (str k)) "="
+                               (form-urlencoded/form-encode (str v)))))
          (str/join "&"))))
 
 (defn http-fn
