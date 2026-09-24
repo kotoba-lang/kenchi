@@ -16,7 +16,7 @@
 
   An adapter NEVER decides truth or publishability — it only emits stamped
   proposals. ProvenanceGovernor and LicenseGovernor censor downstream."
-  (:require #?(:clj  [clojure.edn :as edn]
+  (:require #?(:clj  [kotoba.lang.edn :as edn]
                :cljs [cljs.reader :as edn])
             [kotoba.lang.text :as str]))
 
