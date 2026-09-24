@@ -2,7 +2,7 @@
   "Common Crawl ingest contracts — all offline via injected I/O:
   index parsing, sale/rental/POA price extraction, and that captured listings
   become :list / :derived-only observations stamped by portal authority."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [clojure.edn :as edn]
             [kenchi.commoncrawl :as cc]
             [kenchi.fusion :as fusion]))

@@ -1,7 +1,7 @@
 (ns kenchi.core-test
   "The library facade — kenchi.core/value is the one entry point a consumer
   calls; it must return published / withheld-mrv / insufficient-evidence."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kenchi.core :as kenchi]))
 
 (defn- sales [& vs]

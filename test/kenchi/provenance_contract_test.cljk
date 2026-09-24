@@ -3,7 +3,7 @@
   number: kenchi NEVER publishes a POINT value the ProvenanceGovernor would
   reject (< N independent sources, stale, or after-outlier too thin), and
   NEVER passes restricted source data through as raw."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [langgraph.graph :as g]
             [kenchi.parcel :as parcel]
             [kenchi.sources :as sources]

@@ -1,7 +1,7 @@
 (ns kenchi.live-pipeline-test
   "Contracts for the live-wiring modules: ingest normalization, PDS publish
   gate, and flywheel recalibration — all offline via injected I/O."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kenchi.ingest :as ingest]
             [kenchi.publish :as publish]
             [kenchi.flywheel :as flywheel]
