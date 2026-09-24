@@ -3,7 +3,7 @@
   The one invariant under test: member submissions are Observations like any
   other — the governor's gates are UNCHANGED, attribution is mandatory, and
   a member cloud alone can NEVER publish a point."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kenchi.contrib :as contrib]
             [kenchi.core :as kenchi]))
 

@@ -6,6 +6,10 @@
  ;; (kenchi.core/fusion/governor) needs neither; langgraph-clj is for the
  ;; optional actor (kenchi.parcel). Same runtime the robotaxi-actor sits on.
  :deps {
+        ;; kotoba.test (clojure.test-compatible surface), not clojure.test --
+        ;; scripts/migrate-clojure-test-to-kotoba-test.cljk. Explicit floor.
+        io.github.kotoba-lang/test {:git/url "https://github.com/kotoba-lang/test.git"
+                                    :git/sha "2ab4885f99fd25552d380d0f6b0b54c5a72eb7ae"}
         ;; kotoba.json replaced clojure.data.json here (2026-09-24). An explicit
         ;; floor: kotoba.json/read-str and /write-str first exist at 9c11ad1, and
         ;; tools.deps takes the NEWEST sha it is shown.
