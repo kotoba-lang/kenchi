@@ -6,7 +6,11 @@
  ;; (kenchi.core/fusion/governor) needs neither; langgraph-clj is for the
  ;; optional actor (kenchi.parcel). Same runtime the robotaxi-actor sits on.
  :deps {
-        ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
+        ;; kotoba.json replaced clojure.data.json here (2026-09-24). An explicit
+        ;; floor: kotoba.json/read-str and /write-str first exist at 9c11ad1, and
+        ;; tools.deps takes the NEWEST sha it is shown.
+        io.github.kotoba-lang/json {:git/sha "9c11ad189e64907700e8b4eb9b26f40336bffa01"}
+       ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
         ;; tools.deps takes the NEWEST sha it is shown, so without a floor here
         ;; this repo silently rides whatever a sibling happens to name.
         io.github.kotoba-lang/text {:git/sha "73bdb13ae7a3d004b44bca08be03a3191157a38f"}
