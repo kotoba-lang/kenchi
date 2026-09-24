@@ -9,7 +9,7 @@
 
   Zero workspace deps beyond data.json; java.net.http ships with the JDK
   (same choice langchain-clj made)."
-  (:require [clojure.data.json :as json]
+  (:require [kotoba.json :as json]
             [kotoba.lang.text :as str])
   (:import (java.net URI URLEncoder)
            (java.net.http HttpClient HttpRequest
