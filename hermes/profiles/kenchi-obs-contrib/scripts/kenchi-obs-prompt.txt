@@ -1,0 +1,7 @@
+kenchi-obs-contrib 1 反復。
+
+まず monitor 計定 (scripts/kenchi_obs_evidence.sh) を terminal で 1 回実行し、PROBE/OBS 行を実測として読む。
+- contrib_ns が ABSENT なら、その gap を 1 finding として報告する (src/kenchi/contrib.cljk 未実装 = 参加者提出経路が無い)。
+- ATProto 経路は読み取りのみ。putRecord は blocked。
+- 1 finding だけを報告し、proposal は workspace/slices/ に EDN で残す (git commit しない)。
+報告書式は SOUL.md。捏造禁止。測れなかったら UNMEASURED。
