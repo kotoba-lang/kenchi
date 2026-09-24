@@ -1,0 +1,2 @@
+description: 'kenchi-obs-contrib: member-submitted Observation ingest bot for kenchi (provenance-gated real-estate valuation). Polls ATProto observations, governor pre-checks, proposes worktree slices.'
+description_auto: false

@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "614530d5884b",
+      "model": null,
+      "name": "kenchi-obs-contrib-tick",
+      "no_agent": false,
+      "prompt": "kenchi-obs-contrib 1 反復。\n\nまず monitor 計定 (scripts/kenchi_obs_evidence.sh) を terminal で 1 回実行し、PROBE/OBS 行を実測として読む。\n- contrib_ns が ABSENT なら、その gap を 1 finding として報告する (src/kenchi/contrib.cljk 未実装 = 参加者提出経路が無い)。\n- ATProto 経路は読み取りのみ。putRecord は blocked。\n- 1 finding だけを報告し、proposal は ~/.hermes/profiles/kenchi-obs-contrib/workspace/slices/ に EDN で残す (git commit しない)。\n報告書式は SOUL.md。捏造禁止。測れなかったら UNMEASURED。",
+      "provider": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "43 5-23/8 * * *",
+        "display": "43 5-23/8 * * *"
+      },
+      "script": "kenchi_obs_evidence.sh",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}
