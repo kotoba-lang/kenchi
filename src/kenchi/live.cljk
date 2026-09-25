@@ -9,7 +9,7 @@
 
   Run: kbb -M:dev:live"
   (:require [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]
+            [kotoba.io :as io]
             [langgraph.graph :as g]
             [kenchi.ingest :as ingest]
             [kenchi.parcel :as parcel]
